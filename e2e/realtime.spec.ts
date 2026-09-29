@@ -1,0 +1,32 @@
+import { expect, test } from '@playwright/test'
+
+// Real wall-clock timers (no fake clock) — run against the deployed site.
+test('real-time: OTP countdown ticks and Nafath expires after 60s', async ({ page }) => {
+  test.setTimeout(120_000)
+  const phone = page.getByTestId('phone')
+  await page.goto('./')
+  await phone.getByLabel('Email').fill('existing@jahez.net')
+  await phone.getByRole('button', { name: 'Continue', exact: true }).click()
+  const resend = phone.getByTestId('otp-resend')
+  await expect(resend).toContainText(/Resend in 0:5\d|Resend in 1:00/)
+  const first = await resend.innerText()
+  await page.waitForTimeout(3_000)
+  expect(await resend.innerText()).not.toEqual(first)
+
+  await phone.getByRole('button', { name: 'Back', exact: true }).click()
+  await phone.getByLabel('Email').fill('abdullah@jahez.net')
+  await phone.getByRole('button', { name: 'Continue', exact: true }).click()
+  await phone.getByRole('radio', { name: /I already have a restaurant/ }).click()
+  await phone.getByRole('button', { name: 'Continue', exact: true }).click()
+  await phone.getByRole('textbox', { name: 'National ID' }).fill('1222222222')
+  await phone.getByText('I agree that Jahez may use').click()
+  await phone.getByRole('button', { name: 'Continue', exact: true }).click()
+  const timer = phone.getByTestId('nafath-timer')
+  await expect(timer).toHaveText(/^(1:00|0:5\d)$/)
+  await page.waitForTimeout(5_000)
+  await expect(timer).toHaveText(/^0:5[3-6]$/)
+  await expect(phone.getByRole('heading', { name: 'We couldn’t verify your identity' })).toBeVisible({ timeout: 60_000 })
+  await expect(phone).toContainText('expired before it was approved')
+  await expect(page.getByTestId('activity')).toContainText('Verification expired')
+  await page.screenshot({ path: 'shots/live-expired.png' })
+})

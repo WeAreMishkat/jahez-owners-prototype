@@ -11,7 +11,7 @@ async function snap(page: Page, path: string) {
 
 async function start(page: Page) {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto('./')
   await expect(phone(page).getByRole('heading', { name: 'Welcome to Jahez for Owners' })).toBeVisible()
 }
 
@@ -401,7 +401,7 @@ test('page refresh works and assets load', async ({ page }) => {
   const failed: string[] = []
   page.on('response', r => { if (r.status() >= 400) failed.push(r.url()) })
   page.on('pageerror', e => failed.push(String(e)))
-  await page.goto('/')
+  await page.goto('./')
   await page.reload()
   await expect(phone(page).getByRole('heading', { name: 'Welcome to Jahez for Owners' })).toBeVisible()
   await expect(page.locator('img[src*="jahez-app-icon"]').first()).toHaveJSProperty('complete', true)
